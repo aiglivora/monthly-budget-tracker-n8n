@@ -1,0 +1,535 @@
+{
+  "name": "My workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "dataType": "string",
+        "value1": "={{ $json.message.text }}",
+        "rules": {
+          "rules": [
+            {
+              "operation": "startsWith",
+              "value2": "=/in"
+            },
+            {
+              "operation": "startsWith",
+              "value2": "/out",
+              "output": 1
+            },
+            {
+              "operation": "startsWith",
+              "value2": "/sum",
+              "output": 2
+            }
+          ]
+        }
+      },
+      "name": "Switch Message Type",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 1,
+      "position": [
+        200,
+        160
+      ],
+      "id": "8aaadeb4-5812-4f1d-b1c4-448539bc1ec3"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Loop over input items and add a new field called 'myNewField' to the JSON of each one\nfor (const item of $input.all()) {\n  item.json.myNewField = 1;\n}\n\nreturn $input.all();"
+      },
+      "name": "Format Prompt",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        400,
+        20
+      ],
+      "id": "25ba11ea-7f00-4d75-8e36-a33e585f44c4"
+    },
+    {
+      "parameters": {
+        "jsCode": "for (const item of $input.all()) {\n  const raw = item.json.output;\n\n  // Extraction du JSON entre les balises ```\n  const cleaned = raw.match(/```json\\n([\\s\\S]*?)```/)?.[1];\n\n  if (cleaned) {\n    const parsed = JSON.parse(cleaned);\n    item.json = parsed;\n  }\n\n  // Sinon on garde l'entrée d'origine pour éviter un plantage\n}\n\nreturn $input.all();"
+      },
+      "name": "Parse GPT Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1260,
+        0
+      ],
+      "id": "99641b7b-a0c5-475a-a145-5fcd4c7037ac"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger1').item.json.message.chat.id }}",
+        "text": "={{'Restant du mois : ' + $json.sum_Montant + ' euros'}}",
+        "additionalFields": {}
+      },
+      "name": "Send Telegram",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1,
+      "position": [
+        1380,
+        320
+      ],
+      "id": "7dd045d6-6e4e-494c-9b8a-2520151e0a7c",
+      "webhookId": "ff790826-9460-4214-83c8-d03f93bb1afc",
+      "credentials": {
+        "telegramApi": {
+          "id": "92vN7kFih7T1UQ7g",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -280,
+        200
+      ],
+      "id": "e4fed23c-269b-49ad-b698-0cc69e1c2427",
+      "name": "Telegram Trigger1",
+      "webhookId": "5880aadd-52b0-4ccd-b1d0-337357e3f440",
+      "credentials": {
+        "telegramApi": {
+          "id": "92vN7kFih7T1UQ7g",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger1').item.json.message.chat.id }}",
+        "text": "=Hello !!!",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ],
+      "id": "8b0c414b-128e-40cd-9b29-3e79b3e58726",
+      "name": "Access Denied1",
+      "webhookId": "7dd00034-45f0-41f1-8033-0ae3f336d952",
+      "credentials": {
+        "telegramApi": {
+          "id": "92vN7kFih7T1UQ7g",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "29367db4-7d52-4071-959d-261626e55926",
+              "leftValue": "={{ $json.message.chat.username }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            },
+            {
+              "id": "34b4cd84-ec44-49a7-b74e-23a2fb786e1f",
+              "leftValue": "={{ $json.message.chat.username }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -40,
+        200
+      ],
+      "id": "e6426031-a054-40a6-af06-a2b5ff522ae7",
+      "name": "If1"
+    },
+    {
+      "parameters": {
+        "fieldsToSummarize": {
+          "values": [
+            {
+              "aggregation": "sum",
+              "field": "Montant"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.summarize",
+      "typeVersion": 1.1,
+      "position": [
+        1180,
+        320
+      ],
+      "id": "c8fc3498-705b-47ba-9b88-8f0715cad9a3",
+      "name": "Summarize"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1ovMyf58UUG9IQ5vbJ66WTrkyCoIASAneyl2yNfhSy10",
+          "mode": "list",
+          "cachedResultName": "BudgetMensuel",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1ovMyf58UUG9IQ5vbJ66WTrkyCoIASAneyl2yNfhSy10/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Juin",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1ovMyf58UUG9IQ5vbJ66WTrkyCoIASAneyl2yNfhSy10/edit#gid=0"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.6,
+      "position": [
+        1020,
+        320
+      ],
+      "id": "9b994c07-ee5f-4d77-a822-2bacf3088a82",
+      "name": "Read",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "RK0wbqKRJB4apqTx",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "b58c41ed-03a5-43b1-b0cb-1cdb80da552c",
+              "name": "formatDate",
+              "value": "={{ new Date().toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' }).split('/').join('-') }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        620,
+        20
+      ],
+      "id": "4f5b7ec6-fe24-44fc-b071-bc83b94f056f",
+      "name": "Get date"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Voici un message Telegram qui commence par /in ou /out reçu le  {{ $json.formatDate }}: {{$json[\"message\"][\"text\"]}}.\n\n- /in signifie une entrée d'argent (positif).\n- /out signifie une dépense (doit être négatif).\n\nExtrait et retourne ces 3 éléments au format suivant :\n{\n  \"Date\": \"JJ-MM-AAAA\",\n  \"Description\": \"<texte après la commande>\",\n  \"Montant\": <valeur numérique, négative si /out>\n}\n\nExemple :\nMessage : /out courses 12.50\nRésultat :\n{\n  \"Date\": \"04-06-2025\",\n  \"Description\": \"courses\",\n  \"Montant\": -12.5\n}",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2,
+      "position": [
+        900,
+        0
+      ],
+      "id": "62c5bd4b-4203-47ef-9733-8c4c56d92100",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4o-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        760,
+        180
+      ],
+      "id": "9d1adefa-eaeb-462c-9547-e36f54f48067",
+      "name": "GPT-4o-mini",
+      "credentials": {
+        "openAiApi": {
+          "id": "gDgOMZQzCFJ0mTJ8",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "1ovMyf58UUG9IQ5vbJ66WTrkyCoIASAneyl2yNfhSy10",
+          "mode": "list",
+          "cachedResultName": "BudgetMensuel",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1ovMyf58UUG9IQ5vbJ66WTrkyCoIASAneyl2yNfhSy10/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Juin",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1ovMyf58UUG9IQ5vbJ66WTrkyCoIASAneyl2yNfhSy10/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Date",
+              "displayName": "Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Description",
+              "displayName": "Description",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Montant",
+              "displayName": "Montant",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Const",
+              "displayName": "Const",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Budget restant",
+              "displayName": "Budget restant",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "name": "Save to Google Sheet",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4,
+      "position": [
+        1460,
+        0
+      ],
+      "id": "0a9ec013-3a40-4bb3-b8f4-f24dbe9dfe8a",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "RK0wbqKRJB4apqTx",
+          "name": "Google Sheets account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Switch Message Type": {
+      "main": [
+        [
+          {
+            "node": "Format Prompt",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Format Prompt",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Read",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse GPT Response": {
+      "main": [
+        [
+          {
+            "node": "Save to Google Sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Prompt": {
+      "main": [
+        [
+          {
+            "node": "Get date",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Telegram Trigger1": {
+      "main": [
+        [
+          {
+            "node": "If1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If1": {
+      "main": [
+        [
+          {
+            "node": "Switch Message Type",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Access Denied1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Summarize": {
+      "main": [
+        [
+          {
+            "node": "Send Telegram",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read": {
+      "main": [
+        [
+          {
+            "node": "Summarize",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get date": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Parse GPT Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GPT-4o-mini": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save to Google Sheet": {
+      "main": [
+        [
+          {
+            "node": "Read",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "",
+  "meta": {
+    "instanceId": "2ecceba55098677aee367941ff794a0aee902e7192e9ec555a61f4fbe24b9493"
+  },
+  "tags": []
+}
